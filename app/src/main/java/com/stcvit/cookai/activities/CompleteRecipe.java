@@ -21,6 +21,7 @@ public class CompleteRecipe extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_complete_recipe);
 
+
         Bundle bundle = getIntent().getExtras();
         String json_item;
         json_item = bundle.getString("Full_Recipe");

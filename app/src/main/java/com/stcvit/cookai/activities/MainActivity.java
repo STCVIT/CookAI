@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         image_emptyvessel=findViewById(R.id.imageview_emptyvessel);
         image_emptyvessel.setVisibility(View.VISIBLE);
         image_filledvessel=findViewById(R.id.imageview_filledvessel);
+
         try{
             Bundle bundle = getIntent().getExtras();
             if(bundle.getString("Clear").equals("Clear"));{
@@ -108,11 +109,6 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog dialog
                             = builder.create();
                     dialog.show();
-                    /*ProgressDialog progressDialog = new ProgressDialog(MainActivity.this, R.style.AppCompatAlertDialogStyle);
-                    progressDialog.setMessage("Fetching your Recipes");
-                    progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-                    progressDialog.setIndeterminate(true);
-                    progressDialog.show();*/
                     ingredients_list.clear();
                     String request = "";
                     for (int i = 0; i < chipGroup_ingredients.getChildCount(); i++) {
