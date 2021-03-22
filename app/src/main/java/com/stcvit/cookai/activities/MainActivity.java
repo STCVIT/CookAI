@@ -23,6 +23,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.ybq.android.spinkit.SpinKitView;
 import com.google.android.material.chip.Chip;
@@ -162,6 +163,9 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(Call<List<IngredientsPost>> call, Throwable t) {
                             Log.i("FAILURE out ", t.toString());
+                            Snackbar.make(nestedScrollView_main,"We experiencing some error, Please retry! ", Snackbar.LENGTH_SHORT)
+                                    .setBackgroundTint(getApplicationContext()
+                                            .getColor(R.color.textColor)).setTextColor(getColor(R.color.white)).show();
                             dialog.cancel();
                         }
                     });
