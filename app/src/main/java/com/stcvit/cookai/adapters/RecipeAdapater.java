@@ -53,6 +53,7 @@ public class RecipeAdapater extends RecyclerView.Adapter<RecipeAdapater.RecipeCl
         catch (Exception e){
             e.printStackTrace();
         }
+
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -72,7 +73,7 @@ public class RecipeAdapater extends RecyclerView.Adapter<RecipeAdapater.RecipeCl
 
                 }
                 catch (Exception e){
-                    Toast.makeText(context,"Please Retry",Toast.LENGTH_LONG);
+                    //Toast.makeText(context,"Please Retry",Toast.LENGTH_LONG);
                     Intent i = new Intent( context, MainActivity.class);
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(i);

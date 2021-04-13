@@ -6,13 +6,10 @@ import androidx.core.widget.NestedScrollView;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,11 +18,8 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.github.ybq.android.spinkit.SpinKitView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.snackbar.Snackbar;
@@ -33,6 +27,7 @@ import com.google.gson.Gson;
 import com.stcvit.cookai.JsonPlaceholderApi;
 import com.stcvit.cookai.R;
 import com.stcvit.cookai.model.IngredientsPost;
+import com.stcvit.cookai.utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,6 +41,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
+    //Variables for UI elements
     AutoCompleteTextView autoCompleteTextView_ingredients;
     ChipGroup chipGroup_ingredients;
     ArrayList<String> ingredients_list;
@@ -53,35 +49,31 @@ public class MainActivity extends AppCompatActivity {
     Button button_findrecipes;
     TextView textView_pantryStatus,privacy_policy;
     Chip chip;
+    NestedScrollView nestedScrollView_main;
+
+    //Other variables
     private Retrofit retrofit;
-    String URL_req = "https://cookai.azurewebsites.net/api/";
     String ing_temp = "";
     ArrayList<IngredientsPost> ingredientsPosts_list = new ArrayList<>();
     int count = 0;
-    NestedScrollView nestedScrollView_main;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ingredients_list = new ArrayList<>();
 
+        //Network Initialization
         retrofit=new Retrofit.Builder()
-                .baseUrl(URL_req)
+                .baseUrl(Utils.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        ingredients_list = new ArrayList<>();
-        nestedScrollView_main=findViewById(R.id.main_activity_layout);
-        privacy_policy= findViewById(R.id.tv_privacy);
-        autoCompleteTextView_ingredients=findViewById(R.id.textfield_input);
-        chipGroup_ingredients=findViewById(R.id.ingredient_chips);
-        textView_pantryStatus=findViewById(R.id.text_pantrystatus);
-        button_findrecipes=findViewById(R.id.button_findrecipes);
-        image_emptyvessel=findViewById(R.id.imageview_emptyvessel);
-        image_emptyvessel.setVisibility(View.VISIBLE);
-        image_filledvessel=findViewById(R.id.imageview_filledvessel);
+        findViewById();
 
+        //Checking the ingredients list when coming from another activity
         try{
             Bundle bundle = getIntent().getExtras();
             bundle.getString("Clear");
@@ -96,88 +88,13 @@ public class MainActivity extends AppCompatActivity {
         catch (Exception e) {
             e.printStackTrace();
         }
+
+        //Setting adapter to the AutoCompleteText
         String[] ingredients=getResources().getStringArray(R.array.ingredients_array);
         ArrayAdapter<String> adapter= new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,ingredients);
         autoCompleteTextView_ingredients.setAdapter(adapter);
 
-        button_findrecipes.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                    ingredients_list.clear();
-                    String request = "";
-                    for (int i = 0; i < chipGroup_ingredients.getChildCount(); i++) {
-                        String text_from_chip = ((Chip) chipGroup_ingredients.getChildAt(i)).getText().toString();
-                        ingredients_list.add(text_from_chip);
-                        ing_temp = ing_temp + ", " + text_from_chip;
-                        request = request + "," + text_from_chip;
-                    }
-                    if(sizeCheck(ingredients_list)) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        View dialogview = getLayoutInflater().inflate(R.layout.loading_layout, null);
-                        builder.setView(dialogview);
-                        AlertDialog dialog
-                                = builder.create();
-                        dialog.show();
-                        request = request.substring(1, request.length());
-                        Log.i("REQUEST", request);
-
-                        JsonPlaceholderApi jsonPlaceholderApi = retrofit.create(JsonPlaceholderApi.class);
-                        IngredientsPost ingredientsPost = new IngredientsPost(request);
-                        try {
-                            String json = new Gson().toJson(ingredientsPost);
-                            Log.i("JSON req", json);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                        Call<List<IngredientsPost>> call = jsonPlaceholderApi.postIngredients(ingredientsPost);
-                        call.enqueue(new Callback<List<IngredientsPost>>() {
-                            @Override
-                            public void onResponse(Call<List<IngredientsPost>> call, Response<List<IngredientsPost>> response) {
-                                if (!response.isSuccessful()) {
-                                    Log.i("FAILED in ", response.toString());
-                                    dialog.cancel();
-                                } else {
-                                    Log.i("Success :: ", response.body().get(0).getTitle());
-                                    int size = response.body().size();
-                                    ingredientsPosts_list.clear();
-                                    for (int i = 0; i < size; i++) {
-                                        String title = response.body().get(i).getTitle();
-                                        String ingredients = response.body().get(i).getIngredients();
-                                        int time = response.body().get(i).getTime();
-                                        String imgurl = response.body().get(i).getImgurl();
-                                        String cuisine = response.body().get(i).getCuisine();
-                                        String instruction = response.body().get(i).getInstructions();
-                                        ingredientsPosts_list.add(new IngredientsPost(title, ingredients, time, imgurl, cuisine, instruction));
-                                    }
-                                    Bundle bundle = new Bundle();
-                                    bundle.putSerializable("Recipes", (Serializable) ingredientsPosts_list);
-                                    Intent intent = new Intent(MainActivity.this, RecipesActivity.class);
-                                    intent.putExtras(bundle);
-                                    startActivity(intent);
-                                    overridePendingTransition(R.anim.slide_in_right,
-                                            R.anim.slide_out_left);
-                                    dialog.cancel();
-                                }
-                            }
-
-                            @SuppressLint("NewApi")
-                            @Override
-                            public void onFailure(Call<List<IngredientsPost>> call, Throwable t) {
-                                Log.i("FAILURE out ", t.toString());
-                                Snackbar.make(nestedScrollView_main, "We are experiencing some error, Please retry! ", Snackbar.LENGTH_SHORT)
-                                        .setBackgroundTint(getApplicationContext()
-                                                .getColor(R.color.textColor)).setTextColor(getColor(R.color.white)).show();
-                                dialog.cancel();
-                            }
-                        });
-                    }
-            }
-        });
-
-
+        //Adding and Removing chip items from the ingredients chip group
         autoCompleteTextView_ingredients.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
@@ -211,19 +128,114 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        onClickListener();
+
+    }
+
+    private void onClickListener() {
         privacy_policy.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData((Uri
-                        .parse("https://prajeshkumarg.github.io/Cook_AI_PrivacyPolicy/")));
+                        .parse(Utils.PRIVACY_URL)));
                 startActivity(intent);
             }
         });
 
+        button_findrecipes.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                ingredients_list.clear();
+                String request = "";
+                for (int i = 0; i < chipGroup_ingredients.getChildCount(); i++) {
+                    String text_from_chip = ((Chip) chipGroup_ingredients.getChildAt(i)).getText().toString();
+                    ingredients_list.add(text_from_chip);
+                    ing_temp = ing_temp + ", " + text_from_chip;
+                    request = request + "," + text_from_chip;
+                }
+                if(sizeCheck(ingredients_list)) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    View dialogview = getLayoutInflater().inflate(R.layout.loading_layout, null);
+                    builder.setView(dialogview);
+                    AlertDialog dialog
+                            = builder.create();
+                    dialog.show();
+                    request = request.substring(1, request.length());
+                    Log.i("REQUEST", request);
+
+                    JsonPlaceholderApi jsonPlaceholderApi = retrofit.create(JsonPlaceholderApi.class);
+                    IngredientsPost ingredientsPost = new IngredientsPost(request);
+
+                    try {
+                        Log.i("JSON req", ingredientsPost.getFoodItems());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Log.i("REQFAIL",e.toString());
+                    }
+
+
+
+                    Call<List<IngredientsPost>> call = jsonPlaceholderApi.postIngredients(ingredientsPost);
+                    call.enqueue(new Callback<List<IngredientsPost>>() {
+                        @Override
+                        public void onResponse(Call<List<IngredientsPost>> call, Response<List<IngredientsPost>> response) {
+                            if (!response.isSuccessful()) {
+                                Log.i("FAILED in ", response.toString());
+                                dialog.cancel();
+                            } else {
+                                Log.i("Success :: ", response.body().get(0).getTitle());
+                                int size = response.body().size();
+                                ingredientsPosts_list.clear();
+                                for (int i = 0; i < size; i++) {
+                                    String title = response.body().get(i).getTitle();
+                                    String ingredients = response.body().get(i).getIngredients();
+                                    int time = response.body().get(i).getTime();
+                                    String imgurl = response.body().get(i).getImgurl();
+                                    String cuisine = response.body().get(i).getCuisine();
+                                    String instruction = response.body().get(i).getInstructions();
+                                    ingredientsPosts_list.add(new IngredientsPost(title, ingredients, time, imgurl, cuisine, instruction));
+                                }
+                                Bundle bundle = new Bundle();
+                                bundle.putSerializable("Recipes", (Serializable) ingredientsPosts_list);
+                                Intent intent = new Intent(MainActivity.this, RecipesActivity.class);
+                                intent.putExtras(bundle);
+                                startActivity(intent);
+                                overridePendingTransition(R.anim.slide_in_right,
+                                        R.anim.slide_out_left);
+                                dialog.cancel();
+                            }
+                        }
+
+                        @SuppressLint("NewApi")
+                        @Override
+                        public void onFailure(Call<List<IngredientsPost>> call, Throwable t) {
+                            Log.i("FAILURE out ", t.toString());
+                            Snackbar.make(nestedScrollView_main, "We are experiencing some error, Please retry! ", Snackbar.LENGTH_SHORT)
+                                    .setBackgroundTint(getApplicationContext()
+                                            .getColor(R.color.textColor)).setTextColor(getColor(R.color.white)).show();
+                            dialog.cancel();
+                        }
+                    });
+                }
+            }
+        });
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void findViewById() {
+        nestedScrollView_main=findViewById(R.id.main_activity_layout);
+        privacy_policy= findViewById(R.id.tv_privacy);
+        autoCompleteTextView_ingredients=findViewById(R.id.textfield_input);
+        chipGroup_ingredients=findViewById(R.id.ingredient_chips);
+        textView_pantryStatus=findViewById(R.id.text_pantrystatus);
+        button_findrecipes=findViewById(R.id.button_findrecipes);
+        image_emptyvessel=findViewById(R.id.imageview_emptyvessel);
+        image_emptyvessel.setVisibility(View.VISIBLE);
+        image_filledvessel=findViewById(R.id.imageview_filledvessel);
+    }
+
     private boolean inputCheck(ArrayList<String> ingredients_list, String str) {
         int size = ingredients_list.size();
         if(!ingredients_list.contains(str)){
@@ -237,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    @SuppressLint("NewApi")
+
     private boolean sizeCheck(ArrayList<String> stringArrayList){
         if(stringArrayList.size()>=4){
             return true;
