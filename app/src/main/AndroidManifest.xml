@@ -3,6 +3,10 @@
     package="com.stcvit.cookai">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <supports-screens android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="false"
+        android:xlargeScreens="false"/>
 
     <application
         android:allowBackup="true"
